@@ -29888,7 +29888,7 @@ const cleanupOutdatedBranches = async (ghPagesBaseDir, repo, token) => {
     try {
         const prefix = 'refs/heads/';
         // for some reason git won't pick up config, using url for now
-        const lsRemote = await spawnProcess('git', ['ls-remote', '--heads', `https://${token != null ? token + '@' : ''}github.com/${repo.owner}/${repo.repo}.git`], process.env.GITHUB_WORKSPACE);
+        const lsRemote = await spawnProcess('git', ['ls-remote', '--heads', `https://${token != null ? 'oauth2:' + token + '@' : ''}github.com/${repo.owner}/${repo.repo}.git`], process.env.GITHUB_WORKSPACE);
         const remoteBranches = lsRemote
             .split('\n')
             .filter((l) => l.includes(prefix))
