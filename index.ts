@@ -31,6 +31,7 @@ try {
     const listDirsBranch = core.getInput('list_dirs_branch') == 'true'
     const branchCleanupEnabled = core.getInput('branch_cleanup_enabled') == 'true'
     const maxReports = parseInt(core.getInput('max_reports'), 10)
+    const token = core.getInput('token')
     const branchName = getBranchName(github.context.ref, github.context.payload.pull_request)
     const ghPagesBaseDir = path.join(ghPagesPath, baseDir)
     const reportBaseDir = path.join(ghPagesBaseDir, branchName, reportId)
@@ -80,7 +81,7 @@ try {
 
     // cleanup (should be before the folder listing)
     if (branchCleanupEnabled) {
-        await cleanupOutdatedBranches(ghPagesBaseDir, github.context.repo)
+        await cleanupOutdatedBranches(ghPagesBaseDir, github.context.repo, token)
     }
     if (maxReports > 0) {
         await cleanupOutdatedReports(ghPagesBaseDir, maxReports)

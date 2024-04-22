@@ -33,6 +33,9 @@ inputs:
     description: 'Max reports to keep per branch/report. Set to 0 to disable cleanup.'
     required: false
     default: 100
+  token:
+    description: 'GitHub token for accessing the repository when cleaning up branches.'
+    required: false
 outputs:
   report_url:
     description: 'Published Allure Report url'

@@ -4,13 +4,13 @@ import { spawnProcess } from './spawnProcess.js'
 import { normalizeBranchName } from './helpers.js'
 import { Context } from '@actions/github/lib/context.js'
 
-export const cleanupOutdatedBranches = async (ghPagesBaseDir: string, repo: Context['repo']) => {
+export const cleanupOutdatedBranches = async (ghPagesBaseDir: string, repo: Context['repo'], token: string) => {
     try {
         const prefix = 'refs/heads/'
         // for some reason git won't pick up config, using url for now
         const lsRemote = await spawnProcess(
             'git',
-            ['ls-remote', '--heads', `https://github.com/${repo.owner}/${repo.repo}.git`],
+            ['ls-remote', '--heads', `https://${token != null ? token + '@' : ''}github.com/${repo.owner}/${repo.repo}.git`],
             process.env.GITHUB_WORKSPACE
         )
         const remoteBranches = lsRemote

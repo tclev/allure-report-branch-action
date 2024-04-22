@@ -29609,6 +29609,7 @@ try {
     const listDirsBranch = _actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput('list_dirs_branch') == 'true';
     const branchCleanupEnabled = _actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput('branch_cleanup_enabled') == 'true';
     const maxReports = parseInt(_actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput('max_reports'), 10);
+    const token = _actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput('token');
     const branchName = (0,_src_helpers_js__WEBPACK_IMPORTED_MODULE_9__/* .getBranchName */ .L)(_actions_github__WEBPACK_IMPORTED_MODULE_2__.context.ref, _actions_github__WEBPACK_IMPORTED_MODULE_2__.context.payload.pull_request);
     const ghPagesBaseDir = path__WEBPACK_IMPORTED_MODULE_0__.join(ghPagesPath, baseDir);
     const reportBaseDir = path__WEBPACK_IMPORTED_MODULE_0__.join(ghPagesBaseDir, branchName, reportId);
@@ -29651,7 +29652,7 @@ try {
     await _actions_io__WEBPACK_IMPORTED_MODULE_3__.mkdirP(reportBaseDir);
     // cleanup (should be before the folder listing)
     if (branchCleanupEnabled) {
-        await (0,_src_cleanup_js__WEBPACK_IMPORTED_MODULE_7__/* .cleanupOutdatedBranches */ .B)(ghPagesBaseDir, _actions_github__WEBPACK_IMPORTED_MODULE_2__.context.repo);
+        await (0,_src_cleanup_js__WEBPACK_IMPORTED_MODULE_7__/* .cleanupOutdatedBranches */ .B)(ghPagesBaseDir, _actions_github__WEBPACK_IMPORTED_MODULE_2__.context.repo, token);
     }
     if (maxReports > 0) {
         await (0,_src_cleanup_js__WEBPACK_IMPORTED_MODULE_7__/* .cleanupOutdatedReports */ .g)(ghPagesBaseDir, maxReports);
@@ -29883,11 +29884,11 @@ var helpers = __nccwpck_require__(3015);
 
 
 
-const cleanupOutdatedBranches = async (ghPagesBaseDir, repo) => {
+const cleanupOutdatedBranches = async (ghPagesBaseDir, repo, token) => {
     try {
         const prefix = 'refs/heads/';
         // for some reason git won't pick up config, using url for now
-        const lsRemote = await spawnProcess('git', ['ls-remote', '--heads', `https://github.com/${repo.owner}/${repo.repo}.git`], process.env.GITHUB_WORKSPACE);
+        const lsRemote = await spawnProcess('git', ['ls-remote', '--heads', `https://${token != null ? token + '@' : ''}github.com/${repo.owner}/${repo.repo}.git`], process.env.GITHUB_WORKSPACE);
         const remoteBranches = lsRemote
             .split('\n')
             .filter((l) => l.includes(prefix))
