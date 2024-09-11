@@ -67,6 +67,7 @@ try {
         branchCleanupEnabled,
         maxReports,
     })
+    console.log('hello world')
 
     if (!(await isFileExist(ghPagesPath))) {
         throw new Error("Folder with gh-pages branch doesn't exist: " + ghPagesPath)
@@ -88,15 +89,15 @@ try {
     }
 
     // folder listing
-    if (listDirs) {
-        if (await shouldWriteRootHtml(ghPagesPath)) {
-            await writeFolderListing(ghPagesPath, '.')
-        }
-        await writeFolderListing(ghPagesPath, baseDir)
-    }
-    if (listDirsBranch) {
-        await writeFolderListing(ghPagesPath, path.join(baseDir, branchName))
-    }
+    // if (listDirs) {
+    //     if (await shouldWriteRootHtml(ghPagesPath)) {
+    //         await writeFolderListing(ghPagesPath, '.')
+    //     }
+    //     await writeFolderListing(ghPagesPath, baseDir)
+    // }
+    // if (listDirsBranch) {
+    //     await writeFolderListing(ghPagesPath, path.join(baseDir, branchName))
+    // }
 
     // process allure report
     const lastRunId = await getLastRunId(reportBaseDir)
