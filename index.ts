@@ -52,6 +52,7 @@ try {
 
     // log
     console.log({
+        ummm_hello: 'world',
         report_dir: sourceReportDir,
         gh_pages: ghPagesPath,
         report_id: reportId,
