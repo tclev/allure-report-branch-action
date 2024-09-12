@@ -1,30 +1,46 @@
 import * as child_process from 'child_process'
 import * as fs from 'fs/promises'
 import * as path from 'path'
-import { allureReport } from './report_allure.js'
-import { isFileExist } from './isFileExists.js'
+import { isExists } from './helpers.js'
+
+export interface ReportGenerationIdInfo {
+    gitHash: string
+    runId: string
+    runTimestamp: number
+}
+
+export const writeEnviromentFile = async (sourceResultsDir: string, envInfo: Record<string, string>) => {
+    const dataFile = path.join(sourceResultsDir, 'environment.properties')
+    const dataStr = Object.entries(envInfo)
+        .map(([key, value]) => `${key}=${value}`)
+        .join('\n')
+    await fs.writeFile(dataFile, dataStr)
+}
 
 export const writeExecutorJson = async (
-    sourceReportDir: string,
+    sourceResultsDir: string,
     {
         buildUrl,
         buildOrder,
+        reportName,
         reportUrl,
-        runUniqueId,
+        reportGenerationId,
     }: {
         buildUrl: string
-        runUniqueId: string
+        reportGenerationId: string
         buildOrder: number
+        reportName: string
         reportUrl: string
     }
 ) => {
-    const dataFile = path.join(sourceReportDir, 'executor.json')
+    const dataFile = path.join(sourceResultsDir, 'executor.json')
     const dataJson: AllureExecutor = {
+        reportName,
         // type is required, otherwise allure fails with java.lang.NullPointerException
         type: 'github',
         // adds link to GitHub Actions Run
         name: 'GitHub Actions',
-        buildName: `Run ${runUniqueId}`,
+        buildName: `Run ${reportGenerationId}`,
         buildUrl,
         // required to open previous report in TREND
         reportUrl,
@@ -33,10 +49,11 @@ export const writeExecutorJson = async (
     await fs.writeFile(dataFile, JSON.stringify(dataJson, null, 2))
 }
 
-export const spawnAllure = async (allureResultsDir: string, allureReportDir: string) => {
+export const spawnAllure = async (inputResultsDir: string, outputReportDir: string, singleFileMode: boolean = false) => {
+    const fileModeOption = singleFileMode ? '--single-file' : ''
     const allureChildProcess = child_process.spawn(
         '/allure-commandline/bin/allure',
-        ['generate', '--clean', allureResultsDir, '-o', allureReportDir],
+        ['generate', '--clean', fileModeOption, inputResultsDir, '-o', outputReportDir],
         { stdio: 'inherit' }
     )
     const generation = new Promise<void>((resolve, reject) => {
@@ -47,33 +64,46 @@ export const spawnAllure = async (allureResultsDir: string, allureReportDir: str
     return generation
 }
 
-export const getLastRunId = async (reportBaseDir: string) => {
-    const dataFile = path.join(reportBaseDir, 'lastRun.json')
+export const getReportGenerationId = (info: ReportGenerationIdInfo): string => {
+    return `${info.gitHash}_${info.runId}_${info.runTimestamp}`
+}
 
-    if (await isFileExist(dataFile)) {
-        const lastRun: LastRunJson = JSON.parse((await fs.readFile(dataFile)).toString('utf-8'))
-        return `${lastRun.runId}_${lastRun.runTimestamp}`
-    } else {
-        return null
+export const getReportGenerationIdInfo = (reportGenerationId: string): ReportGenerationIdInfo => {
+    const [gitHash, runId, runTimestampStr] = reportGenerationId.split('_')
+    return {
+        gitHash,
+        runId,
+        runTimestamp: parseInt(runTimestampStr),
     }
 }
 
-export const writeLastRunId = async (reportBaseDir: string, runId: number, runTimestamp: number) => {
-    const dataFile = path.join(reportBaseDir, 'lastRun.json')
-
-    const dataJson: LastRunJson = { runId, runTimestamp }
-
-    await fs.writeFile(dataFile, JSON.stringify(dataJson, null, 2))
+export const getPrevReportGenerationId = async (reportBaseDir: string, prevGitHash: string) => {
+    const matchDirs: Record<string, string> = {}
+    if (await isExists(reportBaseDir)) {
+        const dirs = await fs.readdir(reportBaseDir, { withFileTypes: true })
+        dirs.filter((dirent) => dirent.isDirectory()).forEach((dir) => {
+            if (dir.name.startsWith(prevGitHash)) {
+                const runTimestamp = getReportGenerationIdInfo(dir.name).runTimestamp
+                matchDirs[runTimestamp] = dir.name
+            }
+        })
+        const hasPrevRunDirs = Object.keys(matchDirs).length > 0
+        if (hasPrevRunDirs) {
+            const prevRunTimestamp = Object.keys(matchDirs).sort().reverse()[0]
+            return matchDirs[prevRunTimestamp]
+        }
+    }
+    return null
 }
 
-export const updateDataJson = async (reportBaseDir: string, reportDir: string, runId: number, runUniqueId: string) => {
+export const updateDataJson = async (reportDir: string, reportGenerationId: string) => {
     const summaryJson: AllureSummaryJson = JSON.parse(
         (await fs.readFile(path.join(reportDir, 'widgets', 'summary.json'))).toString('utf-8')
     )
-    const dataFile = path.join(reportBaseDir, 'data.json')
+    const dataFile = path.join(reportDir, 'data.json')
     let dataJson: AllureRecord[]
 
-    if (await isFileExist(dataFile)) {
+    if (await isExists(dataFile)) {
         dataJson = JSON.parse((await fs.readFile(dataFile)).toString('utf-8'))
     } else {
         dataJson = []
@@ -82,10 +112,8 @@ export const updateDataJson = async (reportBaseDir: string, reportDir: string, r
     const failedTests = summaryJson.statistic.broken + summaryJson.statistic.failed
     const testResult: AllureRecordTestResult = failedTests > 0 ? 'FAIL' : summaryJson.statistic.passed > 0 ? 'PASS' : 'UNKNOWN'
     const record: AllureRecord = {
-        runId,
-        runUniqueId,
+        reportGenerationId,
         testResult,
-        timestamp: summaryJson.time.start,
         summary: {
             statistic: summaryJson.statistic,
             time: summaryJson.time,
@@ -112,12 +140,10 @@ export const getTestResultIcon = (testResult: AllureRecordTestResult) => {
     return '❔'
 }
 
-export const writeAllureListing = async (reportBaseDir: string) => fs.writeFile(path.join(reportBaseDir, 'index.html'), allureReport)
-
-export const isAllureResultsOk = async (sourceReportDir: string) => {
+export const isAllureResultsOk = async (sourceResultsDir: string) => {
     const allureResultExt = ['.json', '.xml']
-    if (await isFileExist(sourceReportDir)) {
-        const listfiles = (await fs.readdir(sourceReportDir, { withFileTypes: true })).filter((d) => {
+    if (await isExists(sourceResultsDir)) {
+        const listfiles = (await fs.readdir(sourceResultsDir, { withFileTypes: true })).filter((d) => {
             const fileName = d.name.toLowerCase()
             return d.isFile() && allureResultExt.some((ext) => fileName.endsWith(ext))
         })
@@ -125,9 +151,9 @@ export const isAllureResultsOk = async (sourceReportDir: string) => {
         if (listfiles.length > 0) {
             return true
         }
-        console.log('allure-results folder has no json or xml files:', sourceReportDir)
+        console.log('allure-results folder has no json or xml files:', sourceResultsDir)
         return false
     }
-    console.log("allure-results folder doesn't exist:", sourceReportDir)
+    console.log("allure-results folder doesn't exist:", sourceResultsDir)
     return false
 }

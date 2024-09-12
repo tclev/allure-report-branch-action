@@ -1,64 +1,61 @@
-import * as path from 'path'
+import { Dirent, readdirSync, writeFileSync } from 'fs'
 import * as fs from 'fs/promises'
-import { spawnProcess } from './spawnProcess.js'
-import { normalizeBranchName } from './helpers.js'
-import { Context } from '@actions/github/lib/context.js'
+import * as path from 'path'
+import { getReportGenerationId, getReportGenerationIdInfo } from './allure.js'
+import { isExists } from './helpers.js'
 
-export const cleanupOutdatedBranches = async (ghPagesBaseDir: string, repo: Context['repo'], token: string) => {
+export const cleanupOutdatedReports = async (reportBaseDir: string, maxActiveReports: number) => {
     try {
-        const prefix = 'refs/heads/'
-        // for some reason git won't pick up config, using url for now
-        const lsRemote = await spawnProcess(
-            'git',
-            ['ls-remote', '--heads', `https://${token != null ? 'oauth2:' + token + '@' : ''}github.com/${repo.owner}/${repo.repo}.git`],
-            process.env.GITHUB_WORKSPACE
-        )
-        const remoteBranches = lsRemote
-            .split('\n')
-            .filter((l) => l.includes(prefix))
-            .map((l) => normalizeBranchName(l.split(prefix)[1]))
-
-        const localBranches = (await fs.readdir(ghPagesBaseDir, { withFileTypes: true })).filter((d) => d.isDirectory()).map((d) => d.name)
-
-        for (const localBranch of localBranches) {
-            if (!remoteBranches.includes(localBranch)) {
-                await fs.rm(path.join(ghPagesBaseDir, localBranch), { recursive: true, force: true })
-            }
-        }
-    } catch (err) {
-        console.error('cleanup outdated branches failed.', err)
-    }
-}
-
-export const cleanupOutdatedReports = async (ghPagesBaseDir: string, maxReports: number) => {
-    try {
-        const localBranches = (await fs.readdir(ghPagesBaseDir, { withFileTypes: true })).filter((d) => d.isDirectory()).map((d) => d.name)
-
-        // branches
-        for (const localBranch of localBranches) {
-            const reports = (await fs.readdir(path.join(ghPagesBaseDir, localBranch), { withFileTypes: true }))
-                .filter((d) => d.isDirectory())
-                .map((d) => d.name)
-
-            // report per branch
-            for (const reportName of reports) {
-                const runs = (await fs.readdir(path.join(ghPagesBaseDir, localBranch, reportName), { withFileTypes: true }))
-                    .filter((d) => d.isDirectory())
-                    .map((d) => d.name)
-
-                // run per report
-                if (runs.length > maxReports) {
-                    runs.sort()
-                    while (runs.length > maxReports) {
-                        await fs.rm(path.join(ghPagesBaseDir, localBranch, reportName, runs.shift() as string), {
-                            recursive: true,
-                            force: true,
-                        })
-                    }
-                }
-            }
+        const dirs = await fs.readdir(reportBaseDir, { withFileTypes: true })
+        const activeReportDirs = dirs.filter((dirent) => dirent.isDirectory()).filter((dir) => isActiveReport(dir))
+        for (const reportDir of determineReportsToCleanup(activeReportDirs, maxActiveReports)) {
+            await cleanupReport(reportDir)
         }
     } catch (err) {
         console.error('cleanup outdated reports failed.', err)
+    }
+}
+
+const isActiveReport = (dir: Dirent): boolean => {
+    const dirPath = path.join(dir.path, dir.name)
+    const dirents = readdirSync(dirPath)
+    return dirents.length > 2
+}
+
+const determineReportsToCleanup = (activeReportDirs: Dirent[], maxActiveReports: number): Dirent[] => {
+    const sortedInfo = activeReportDirs.map((dir) => getReportGenerationIdInfo(dir.name)).sort((a, b) => b.runTimestamp - a.runTimestamp)
+    const gitHashesToKeep = new Set<string>()
+    const infoToKeep = []
+    for (const info of sortedInfo) {
+        if (!gitHashesToKeep.has(info.gitHash)) {
+            gitHashesToKeep.add(info.gitHash)
+            infoToKeep.push(info)
+            if (infoToKeep.length >= maxActiveReports) {
+                break
+            }
+        }
+    }
+    const reportIdsToKeep = infoToKeep.map(getReportGenerationId)
+    return activeReportDirs.filter((dir) => !reportIdsToKeep.includes(dir.name))
+}
+
+const cleanupReport = async (reportDir: Dirent) => {
+    const reportDirPath = path.join(reportDir.path, reportDir.name)
+    console.log('Cleaning up report:', reportDirPath)
+    const dirents = await fs.readdir(reportDirPath, { withFileTypes: true })
+    for (const dirent of dirents) {
+        if (dirent.isDirectory()) {
+            const dirPath = path.join(dirent.path, dirent.name)
+            await fs.rm(dirPath, { recursive: true })
+        } else if (dirent.name !== 'data.json') {
+            const filePath = path.join(dirent.path, dirent.name)
+            await fs.rm(filePath)
+        }
+    }
+
+    const dataFilePath = path.join(reportDirPath, 'data.json')
+    if (await isExists(dataFilePath)) {
+        const indexFilePath = path.join(reportDirPath, 'index.html')
+        await writeFileSync(indexFilePath, "<head><meta http-equiv='refresh' content='0; URL=./data.json'></head>\n")
     }
 }

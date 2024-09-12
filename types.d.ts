@@ -19,9 +19,7 @@ interface AllureSummaryTime {
 type AllureRecordTestResult = 'PASS' | 'FAIL' | 'UNKNOWN'
 
 interface AllureRecord {
-    timestamp: number
-    runId: number
-    runUniqueId: string
+    reportGenerationId: string
     testResult: AllureRecordResult
     summary: {
         statistic: AllureSummaryStatistic
@@ -43,6 +41,7 @@ interface LastRunJson {
 
 interface AllureExecutor {
     type: 'github'
+    reportName: string
     name: string
     buildName: string
     buildUrl: string
