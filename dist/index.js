@@ -29602,6 +29602,7 @@ const baseDir = 'allure-action';
 try {
     const runTimestamp = Date.now();
     // vars
+    const prevGitHash = _actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput('prev_git_hash');
     const sourceReportDir = _actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput('report_dir');
     const ghPagesPath = _actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput('gh_pages');
     const reportId = _actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput('report_id');
@@ -29626,9 +29627,9 @@ try {
     const ghPagesBaseUrl = `${ghPagesUrl}/${baseDir}/${branchName}/${reportId}`.replaceAll(' ', '%20');
     const ghPagesReportUrl = `${ghPagesBaseUrl}/${runUniqueId}`.replaceAll(' ', '%20');
     // log
-    console.log('another change');
+    console.log('sanity check 1');
     console.log({
-        ummm_hello: 'world',
+        prev_git_hash: prevGitHash,
         report_dir: sourceReportDir,
         gh_pages: ghPagesPath,
         report_id: reportId,
@@ -29644,7 +29645,6 @@ try {
         branchCleanupEnabled,
         maxReports,
     });
-    console.log('hello world');
     if (!(await (0,_src_isFileExists_js__WEBPACK_IMPORTED_MODULE_6__/* .isFileExist */ .e)(ghPagesPath))) {
         throw new Error("Folder with gh-pages branch doesn't exist: " + ghPagesPath);
     }

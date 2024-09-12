@@ -5,6 +5,10 @@ branding:
   icon: 'monitor'
   color: 'gray-dark'
 inputs:
+  prev_git_hash:
+    description: 'Previous git commit hash'
+    required: true
+    default: ''
   report_dir:
     description: 'Input allure results dir, default "allure-results"'
     required: true

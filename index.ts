@@ -24,6 +24,7 @@ try {
     const runTimestamp = Date.now()
 
     // vars
+    const prevGitHash = core.getInput('prev_git_hash')
     const sourceReportDir = core.getInput('report_dir')
     const ghPagesPath = core.getInput('gh_pages')
     const reportId = core.getInput('report_id')
@@ -51,9 +52,9 @@ try {
     const ghPagesReportUrl = `${ghPagesBaseUrl}/${runUniqueId}`.replaceAll(' ', '%20')
 
     // log
-    console.log('another change')
+    console.log('sanity check 1')
     console.log({
-        ummm_hello: 'world',
+        prev_git_hash: prevGitHash,
         report_dir: sourceReportDir,
         gh_pages: ghPagesPath,
         report_id: reportId,
@@ -69,7 +70,6 @@ try {
         branchCleanupEnabled,
         maxReports,
     })
-    console.log('hello world')
 
     if (!(await isFileExist(ghPagesPath))) {
         throw new Error("Folder with gh-pages branch doesn't exist: " + ghPagesPath)
