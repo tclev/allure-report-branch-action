@@ -90,15 +90,15 @@ try {
     }
 
     // folder listing
-    // if (listDirs) {
-    //     if (await shouldWriteRootHtml(ghPagesPath)) {
-    //         await writeFolderListing(ghPagesPath, '.')
-    //     }
-    //     await writeFolderListing(ghPagesPath, baseDir)
-    // }
-    // if (listDirsBranch) {
-    //     await writeFolderListing(ghPagesPath, path.join(baseDir, branchName))
-    // }
+    if (listDirs) {
+        if (await shouldWriteRootHtml(ghPagesPath)) {
+            await writeFolderListing(ghPagesPath, '.')
+        }
+        await writeFolderListing(ghPagesPath, baseDir)
+    }
+    if (listDirsBranch) {
+        await writeFolderListing(ghPagesPath, path.join(baseDir, branchName))
+    }
 
     // process allure report
     const lastRunId = await getLastRunId(reportBaseDir)
