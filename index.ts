@@ -51,6 +51,7 @@ try {
     const ghPagesReportUrl = `${ghPagesBaseUrl}/${runUniqueId}`.replaceAll(' ', '%20')
 
     // log
+    console.log('another change')
     console.log({
         ummm_hello: 'world',
         report_dir: sourceReportDir,
