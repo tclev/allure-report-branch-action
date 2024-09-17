@@ -29583,8 +29583,8 @@ __nccwpck_require__.a(module, async (__webpack_handle_async_dependencies__, __we
 /* harmony import */ var path__WEBPACK_IMPORTED_MODULE_3__ = __nccwpck_require__(1017);
 /* harmony import */ var path__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__nccwpck_require__.n(path__WEBPACK_IMPORTED_MODULE_3__);
 /* harmony import */ var _src_allure_js__WEBPACK_IMPORTED_MODULE_4__ = __nccwpck_require__(4151);
-/* harmony import */ var _src_helpers_js__WEBPACK_IMPORTED_MODULE_5__ = __nccwpck_require__(3015);
-/* harmony import */ var _src_cleanup_js__WEBPACK_IMPORTED_MODULE_6__ = __nccwpck_require__(3812);
+/* harmony import */ var _src_cleanup_js__WEBPACK_IMPORTED_MODULE_5__ = __nccwpck_require__(3812);
+/* harmony import */ var _src_helpers_js__WEBPACK_IMPORTED_MODULE_6__ = __nccwpck_require__(3015);
 
 
 
@@ -29601,7 +29601,7 @@ try {
     const ghPagesPath = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('gh_pages');
     const reportType = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('report_type');
     const maxReports = parseInt(_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('max_reports'), 10);
-    const branchName = (0,_src_helpers_js__WEBPACK_IMPORTED_MODULE_5__/* .getBranchName */ .Lm)(_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.ref, _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.payload.pull_request);
+    const branchName = (0,_src_helpers_js__WEBPACK_IMPORTED_MODULE_6__/* .getBranchName */ .Lm)(_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.ref, _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.payload.pull_request);
     const reportGenerationId = `${_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.sha}_${_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.runId}_${runTimestamp}`;
     const reportTypeDir = path__WEBPACK_IMPORTED_MODULE_3__.join(ghPagesPath, baseDir, reportType);
     const reportOutputDir = path__WEBPACK_IMPORTED_MODULE_3__.join(reportTypeDir, reportGenerationId);
@@ -29627,7 +29627,7 @@ try {
         ghPagesReportUrl,
         maxReports,
     });
-    if (!(await (0,_src_helpers_js__WEBPACK_IMPORTED_MODULE_5__/* .isExists */ .hV)(ghPagesPath))) {
+    if (!(await (0,_src_helpers_js__WEBPACK_IMPORTED_MODULE_6__/* .isExists */ .hV)(ghPagesPath))) {
         throw new Error("Folder with gh-pages branch doesn't exist: " + ghPagesPath);
     }
     if (!(await (0,_src_allure_js__WEBPACK_IMPORTED_MODULE_4__/* .isAllureResultsOk */ .aL)(testResultsDir))) {
@@ -29646,15 +29646,16 @@ try {
         buildUrl: githubActionRunUrl,
         reportUrl: ghPagesReportUrl,
     });
-    await (0,_src_allure_js__WEBPACK_IMPORTED_MODULE_4__/* .writeEnviromentFile */ .lm)(testResultsDir, {
-        RunId: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.runId.toString(),
-        ReportId: reportGenerationId,
+    await (0,_src_allure_js__WEBPACK_IMPORTED_MODULE_4__/* .writeEnvironmentFile */ .TO)(testResultsDir, {
+        GitRepo: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.repo,
         BranchName: branchName,
         CommitHash: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.sha,
+        RunId: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.runId.toString(),
+        ReportId: reportGenerationId,
     });
     await (0,_src_allure_js__WEBPACK_IMPORTED_MODULE_4__/* .spawnAllure */ .Mo)(testResultsDir, reportOutputDir);
     const results = await (0,_src_allure_js__WEBPACK_IMPORTED_MODULE_4__/* .updateDataJson */ .V0)(reportOutputDir, reportGenerationId);
-    await (0,_src_cleanup_js__WEBPACK_IMPORTED_MODULE_6__/* .cleanupOutdatedReports */ .g)(reportTypeDir, maxReports);
+    await (0,_src_cleanup_js__WEBPACK_IMPORTED_MODULE_5__/* .cleanupOutdatedReports */ .g)(reportTypeDir, maxReports);
     // outputs
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('report_url', ghPagesReportUrl);
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('test_result', results.testResult);
@@ -29682,9 +29683,9 @@ __webpack_async_result__();
 /* harmony export */   "Iy": () => (/* binding */ getReportGenerationId),
 /* harmony export */   "Mo": () => (/* binding */ spawnAllure),
 /* harmony export */   "RG": () => (/* binding */ getTestResultIcon),
+/* harmony export */   "TO": () => (/* binding */ writeEnvironmentFile),
 /* harmony export */   "V0": () => (/* binding */ updateDataJson),
 /* harmony export */   "aL": () => (/* binding */ isAllureResultsOk),
-/* harmony export */   "lm": () => (/* binding */ writeEnviromentFile),
 /* harmony export */   "sp": () => (/* binding */ writeExecutorJson),
 /* harmony export */   "ux": () => (/* binding */ getReportGenerationIdInfo)
 /* harmony export */ });
@@ -29699,7 +29700,7 @@ __webpack_async_result__();
 
 
 
-const writeEnviromentFile = async (sourceResultsDir, envInfo) => {
+const writeEnvironmentFile = async (sourceResultsDir, envInfo) => {
     const dataFile = path__WEBPACK_IMPORTED_MODULE_2__.join(sourceResultsDir, 'environment.properties');
     const dataStr = Object.entries(envInfo)
         .map(([key, value]) => `${key}=${value}`)

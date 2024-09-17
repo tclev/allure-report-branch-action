@@ -3,98 +3,99 @@ import * as github from '@actions/github'
 import * as io from '@actions/io'
 import * as path from 'path'
 import {
-    getPrevReportGenerationId,
-    getTestResultIcon,
-    isAllureResultsOk,
-    spawnAllure,
-    updateDataJson,
-    writeEnviromentFile,
-    writeExecutorJson,
+	getPrevReportGenerationId,
+	getTestResultIcon,
+	isAllureResultsOk,
+	spawnAllure,
+	updateDataJson,
+	writeEnvironmentFile,
+	writeExecutorJson,
 } from './src/allure.js'
-import { getBranchName, isExists } from './src/helpers.js'
 import { cleanupOutdatedReports } from './src/cleanup.js'
+import { getBranchName, isExists } from './src/helpers.js'
 
 const baseDir = 'test-reports'
 
 try {
-    const runTimestamp = Date.now()
+	const runTimestamp = Date.now()
 
-    // vars
-    const prevGitHash = core.getInput('prev_git_hash')
-    const testResultsDir = core.getInput('results_dir')
-    const ghPagesPath = core.getInput('gh_pages')
-    const reportType = core.getInput('report_type')
-    const maxReports = parseInt(core.getInput('max_reports'), 10)
-    const branchName = getBranchName(github.context.ref, github.context.payload.pull_request)
-    const reportGenerationId = `${github.context.sha}_${github.context.runId}_${runTimestamp}`
-    const reportTypeDir = path.join(ghPagesPath, baseDir, reportType)
-    const reportOutputDir = path.join(reportTypeDir, reportGenerationId)
+	// vars
+	const prevGitHash = core.getInput('prev_git_hash')
+	const testResultsDir = core.getInput('results_dir')
+	const ghPagesPath = core.getInput('gh_pages')
+	const reportType = core.getInput('report_type')
+	const maxReports = parseInt(core.getInput('max_reports'), 10)
+	const branchName = getBranchName(github.context.ref, github.context.payload.pull_request)
+	const reportGenerationId = `${github.context.sha}_${github.context.runId}_${runTimestamp}`
+	const reportTypeDir = path.join(ghPagesPath, baseDir, reportType)
+	const reportOutputDir = path.join(reportTypeDir, reportGenerationId)
 
-    // urls
-    const githubActionRunUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}/actions/runs/${github.context.runId}`
-    const ghPagesUrl = `https://${github.context.repo.owner}.github.io/${github.context.repo.repo}`
-    const ghPagesBaseUrl = `${ghPagesUrl}/${baseDir}/${reportType}`.replaceAll(' ', '%20')
-    const ghPagesReportUrl = `${ghPagesBaseUrl}/${reportGenerationId}`.replaceAll(' ', '%20')
-    const prevReportGenerationId = await getPrevReportGenerationId(reportTypeDir, prevGitHash)
+	// urls
+	const githubActionRunUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}/actions/runs/${github.context.runId}`
+	const ghPagesUrl = `https://${github.context.repo.owner}.github.io/${github.context.repo.repo}`
+	const ghPagesBaseUrl = `${ghPagesUrl}/${baseDir}/${reportType}`.replaceAll(' ', '%20')
+	const ghPagesReportUrl = `${ghPagesBaseUrl}/${reportGenerationId}`.replaceAll(' ', '%20')
+	const prevReportGenerationId = await getPrevReportGenerationId(reportTypeDir, prevGitHash)
 
-    // log
-    console.log({
-        prevGitHash,
-        testResultsDir,
-        ghPagesPath,
-        reportType,
-        reportGenerationId,
-        prevReportGenerationId,
-        ref: github.context.ref,
-        repo: github.context.repo,
-        branchName,
-        reportTypeDir,
-        reportOutputDir,
-        ghPagesReportUrl,
-        maxReports,
-    })
+	// log
+	console.log({
+		prevGitHash,
+		testResultsDir,
+		ghPagesPath,
+		reportType,
+		reportGenerationId,
+		prevReportGenerationId,
+		ref: github.context.ref,
+		repo: github.context.repo,
+		branchName,
+		reportTypeDir,
+		reportOutputDir,
+		ghPagesReportUrl,
+		maxReports,
+	})
 
-    if (!(await isExists(ghPagesPath))) {
-        throw new Error("Folder with gh-pages branch doesn't exist: " + ghPagesPath)
-    }
+	if (!(await isExists(ghPagesPath))) {
+		throw new Error("Folder with gh-pages branch doesn't exist: " + ghPagesPath)
+	}
 
-    if (!(await isAllureResultsOk(testResultsDir))) {
-        throw new Error('There were issues with the allure-results, see error above.')
-    }
+	if (!(await isAllureResultsOk(testResultsDir))) {
+		throw new Error('There were issues with the allure-results, see error above.')
+	}
 
-    await io.mkdirP(reportTypeDir)
+	await io.mkdirP(reportTypeDir)
 
-    // process allure report
-    if (prevReportGenerationId) {
-        const prevHistoryDir = path.join(reportTypeDir, prevReportGenerationId, 'history')
-        await io.cp(prevHistoryDir, testResultsDir, { recursive: true })
-    }
-    await writeExecutorJson(testResultsDir, {
-        reportName: reportType,
-        reportGenerationId,
-        buildOrder: github.context.runId,
-        buildUrl: githubActionRunUrl,
-        reportUrl: ghPagesReportUrl,
-    })
-    await writeEnviromentFile(testResultsDir, {
-        RunId: github.context.runId.toString(),
-        ReportId: reportGenerationId,
-        BranchName: branchName,
-        CommitHash: github.context.sha,
-    })
-    await spawnAllure(testResultsDir, reportOutputDir)
-    const results = await updateDataJson(reportOutputDir, reportGenerationId)
-    await cleanupOutdatedReports(reportTypeDir, maxReports)
+	// process allure report
+	if (prevReportGenerationId) {
+		const prevHistoryDir = path.join(reportTypeDir, prevReportGenerationId, 'history')
+		await io.cp(prevHistoryDir, testResultsDir, { recursive: true })
+	}
+	await writeExecutorJson(testResultsDir, {
+		reportName: reportType,
+		reportGenerationId,
+		buildOrder: github.context.runId,
+		buildUrl: githubActionRunUrl,
+		reportUrl: ghPagesReportUrl,
+	})
+	await writeEnvironmentFile(testResultsDir, {
+		GitRepo: github.context.repo.repo,
+		BranchName: branchName,
+		CommitHash: github.context.sha,
+		RunId: github.context.runId.toString(),
+		ReportId: reportGenerationId,
+	})
+	await spawnAllure(testResultsDir, reportOutputDir)
+	const results = await updateDataJson(reportOutputDir, reportGenerationId)
+	await cleanupOutdatedReports(reportTypeDir, maxReports)
 
-    // outputs
-    core.setOutput('report_url', ghPagesReportUrl)
-    core.setOutput('test_result', results.testResult)
-    core.setOutput('test_result_icon', getTestResultIcon(results.testResult))
-    core.setOutput('test_result_passed', results.passed)
-    core.setOutput('test_result_failed', results.failed)
-    core.setOutput('test_result_total', results.total)
-    core.setOutput('report_generation_id', reportGenerationId)
-    core.setOutput('report_path', reportOutputDir)
+	// outputs
+	core.setOutput('report_url', ghPagesReportUrl)
+	core.setOutput('test_result', results.testResult)
+	core.setOutput('test_result_icon', getTestResultIcon(results.testResult))
+	core.setOutput('test_result_passed', results.passed)
+	core.setOutput('test_result_failed', results.failed)
+	core.setOutput('test_result_total', results.total)
+	core.setOutput('report_generation_id', reportGenerationId)
+	core.setOutput('report_path', reportOutputDir)
 } catch (error) {
-    core.setFailed(error.message)
+	core.setFailed(error.message)
 }
