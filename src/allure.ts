@@ -77,10 +77,10 @@ export const getReportGenerationIdInfo = (reportGenerationId: string): ReportGen
     }
 }
 
-export const getPrevReportGenerationId = async (reportBaseDir: string, prevGitHash: string) => {
+export const getPrevReportGenerationId = async (reportTypeDir: string, prevGitHash: string) => {
     const matchDirs: Record<string, string> = {}
-    if (await isExists(reportBaseDir)) {
-        const dirs = await fs.readdir(reportBaseDir, { withFileTypes: true })
+    if (await isExists(reportTypeDir)) {
+        const dirs = await fs.readdir(reportTypeDir, { withFileTypes: true })
         dirs.filter((dirent) => dirent.isDirectory()).forEach((dir) => {
             if (dir.name.startsWith(prevGitHash)) {
                 const runTimestamp = getReportGenerationIdInfo(dir.name).runTimestamp

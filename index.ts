@@ -21,49 +21,36 @@ try {
 
     // vars
     const prevGitHash = core.getInput('prev_git_hash')
-    const testResultsDir = core.getInput('report_dir') // TODO: maybe rename this?
+    const testResultsDir = core.getInput('results_dir')
     const ghPagesPath = core.getInput('gh_pages')
-    const reportId = core.getInput('report_id')
-    const listDirs = core.getInput('list_dirs') == 'true'
-    const listDirsBranch = core.getInput('list_dirs_branch') == 'true'
-    const branchCleanupEnabled = core.getInput('branch_cleanup_enabled') == 'true'
+    const reportType = core.getInput('report_type')
     const maxReports = parseInt(core.getInput('max_reports'), 10)
-    // const token = core.getInput('token')
     const branchName = getBranchName(github.context.ref, github.context.payload.pull_request)
-    const reportBaseDir = path.join(ghPagesPath, baseDir, reportId)
-
-    /**
-     * `runId` is unique but won't change on job re-run
-     * `runNumber` is not unique and resets from time to time
-     * that's why the `runTimestamp` is used to guarantee uniqueness
-     */
     const reportGenerationId = `${github.context.sha}_${github.context.runId}_${runTimestamp}`
-    const reportOutputDir = path.join(reportBaseDir, reportGenerationId)
+    const reportTypeDir = path.join(ghPagesPath, baseDir, reportType)
+    const reportOutputDir = path.join(reportTypeDir, reportGenerationId)
 
     // urls
     const githubActionRunUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}/actions/runs/${github.context.runId}`
     const ghPagesUrl = `https://${github.context.repo.owner}.github.io/${github.context.repo.repo}`
-    const ghPagesBaseUrl = `${ghPagesUrl}/${baseDir}/${branchName}/${reportId}`.replaceAll(' ', '%20')
+    const ghPagesBaseUrl = `${ghPagesUrl}/${baseDir}/${reportType}`.replaceAll(' ', '%20')
     const ghPagesReportUrl = `${ghPagesBaseUrl}/${reportGenerationId}`.replaceAll(' ', '%20')
-    const prevReportGenerationId = await getPrevReportGenerationId(reportBaseDir, prevGitHash)
+    const prevReportGenerationId = await getPrevReportGenerationId(reportTypeDir, prevGitHash)
 
     // log
     console.log({
         prevGitHash,
         testResultsDir,
         ghPagesPath,
-        reportId,
+        reportType,
         reportGenerationId,
         prevReportGenerationId,
         ref: github.context.ref,
         repo: github.context.repo,
         branchName,
-        reportBaseDir,
+        reportTypeDir,
         reportOutputDir,
-        listDirsBranch,
         ghPagesReportUrl,
-        listDirs,
-        branchCleanupEnabled,
         maxReports,
     })
 
@@ -75,15 +62,15 @@ try {
         throw new Error('There were issues with the allure-results, see error above.')
     }
 
-    await io.mkdirP(reportBaseDir)
+    await io.mkdirP(reportTypeDir)
 
     // process allure report
     if (prevReportGenerationId) {
-        const prevHistoryDir = path.join(reportBaseDir, prevReportGenerationId, 'history')
+        const prevHistoryDir = path.join(reportTypeDir, prevReportGenerationId, 'history')
         await io.cp(prevHistoryDir, testResultsDir, { recursive: true })
     }
     await writeExecutorJson(testResultsDir, {
-        reportName: reportId,
+        reportName: reportType,
         reportGenerationId,
         buildOrder: github.context.runId,
         buildUrl: githubActionRunUrl,
@@ -93,21 +80,20 @@ try {
         RunId: github.context.runId.toString(),
         ReportId: reportGenerationId,
         BranchName: branchName,
-        CommitSha: github.context.sha,
+        CommitHash: github.context.sha,
     })
     await spawnAllure(testResultsDir, reportOutputDir)
     const results = await updateDataJson(reportOutputDir, reportGenerationId)
-    await cleanupOutdatedReports(reportBaseDir, maxReports)
+    await cleanupOutdatedReports(reportTypeDir, maxReports)
 
     // outputs
     core.setOutput('report_url', ghPagesReportUrl)
-    core.setOutput('report_history_url', ghPagesBaseUrl)
     core.setOutput('test_result', results.testResult)
     core.setOutput('test_result_icon', getTestResultIcon(results.testResult))
     core.setOutput('test_result_passed', results.passed)
     core.setOutput('test_result_failed', results.failed)
     core.setOutput('test_result_total', results.total)
-    core.setOutput('run_unique_id', reportGenerationId)
+    core.setOutput('report_generation_id', reportGenerationId)
     core.setOutput('report_path', reportOutputDir)
 } catch (error) {
     core.setFailed(error.message)
