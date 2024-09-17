@@ -19,5 +19,11 @@ module.exports = {
     rules: {
         '@typescript-eslint/no-floating-promises': 'error',
         '@typescript-eslint/no-unused-vars': ['error'],
+        "prettier/prettier": [
+            "error",
+            {
+                "endOfLine": "auto"
+            }
+        ]
     },
 }
