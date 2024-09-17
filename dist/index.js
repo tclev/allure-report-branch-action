@@ -29597,46 +29597,34 @@ try {
     const runTimestamp = Date.now();
     // vars
     const prevGitHash = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('prev_git_hash');
-    const testResultsDir = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('report_dir'); // TODO: maybe rename this?
+    const testResultsDir = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('results_dir');
     const ghPagesPath = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('gh_pages');
-    const reportId = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('report_id');
-    const listDirs = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('list_dirs') == 'true';
-    const listDirsBranch = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('list_dirs_branch') == 'true';
-    const branchCleanupEnabled = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('branch_cleanup_enabled') == 'true';
+    const reportType = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('report_type');
     const maxReports = parseInt(_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('max_reports'), 10);
-    // const token = core.getInput('token')
     const branchName = (0,_src_helpers_js__WEBPACK_IMPORTED_MODULE_5__/* .getBranchName */ .Lm)(_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.ref, _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.payload.pull_request);
-    const reportBaseDir = path__WEBPACK_IMPORTED_MODULE_3__.join(ghPagesPath, baseDir, reportId);
-    /**
-     * `runId` is unique but won't change on job re-run
-     * `runNumber` is not unique and resets from time to time
-     * that's why the `runTimestamp` is used to guarantee uniqueness
-     */
     const reportGenerationId = `${_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.sha}_${_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.runId}_${runTimestamp}`;
-    const reportOutputDir = path__WEBPACK_IMPORTED_MODULE_3__.join(reportBaseDir, reportGenerationId);
+    const reportTypeDir = path__WEBPACK_IMPORTED_MODULE_3__.join(ghPagesPath, baseDir, reportType);
+    const reportOutputDir = path__WEBPACK_IMPORTED_MODULE_3__.join(reportTypeDir, reportGenerationId);
     // urls
     const githubActionRunUrl = `https://github.com/${_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.owner}/${_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.repo}/actions/runs/${_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.runId}`;
     const ghPagesUrl = `https://${_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.owner}.github.io/${_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.repo}`;
-    const ghPagesBaseUrl = `${ghPagesUrl}/${baseDir}/${branchName}/${reportId}`.replaceAll(' ', '%20');
+    const ghPagesBaseUrl = `${ghPagesUrl}/${baseDir}/${reportType}`.replaceAll(' ', '%20');
     const ghPagesReportUrl = `${ghPagesBaseUrl}/${reportGenerationId}`.replaceAll(' ', '%20');
-    const prevReportGenerationId = await (0,_src_allure_js__WEBPACK_IMPORTED_MODULE_4__/* .getPrevReportGenerationId */ .$g)(reportBaseDir, prevGitHash);
+    const prevReportGenerationId = await (0,_src_allure_js__WEBPACK_IMPORTED_MODULE_4__/* .getPrevReportGenerationId */ .$g)(reportTypeDir, prevGitHash);
     // log
     console.log({
         prevGitHash,
         testResultsDir,
         ghPagesPath,
-        reportId,
+        reportType,
         reportGenerationId,
         prevReportGenerationId,
         ref: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.ref,
         repo: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo,
         branchName,
-        reportBaseDir,
+        reportTypeDir,
         reportOutputDir,
-        listDirsBranch,
         ghPagesReportUrl,
-        listDirs,
-        branchCleanupEnabled,
         maxReports,
     });
     if (!(await (0,_src_helpers_js__WEBPACK_IMPORTED_MODULE_5__/* .isExists */ .hV)(ghPagesPath))) {
@@ -29645,14 +29633,14 @@ try {
     if (!(await (0,_src_allure_js__WEBPACK_IMPORTED_MODULE_4__/* .isAllureResultsOk */ .aL)(testResultsDir))) {
         throw new Error('There were issues with the allure-results, see error above.');
     }
-    await _actions_io__WEBPACK_IMPORTED_MODULE_2__.mkdirP(reportBaseDir);
+    await _actions_io__WEBPACK_IMPORTED_MODULE_2__.mkdirP(reportTypeDir);
     // process allure report
     if (prevReportGenerationId) {
-        const prevHistoryDir = path__WEBPACK_IMPORTED_MODULE_3__.join(reportBaseDir, prevReportGenerationId, 'history');
+        const prevHistoryDir = path__WEBPACK_IMPORTED_MODULE_3__.join(reportTypeDir, prevReportGenerationId, 'history');
         await _actions_io__WEBPACK_IMPORTED_MODULE_2__.cp(prevHistoryDir, testResultsDir, { recursive: true });
     }
     await (0,_src_allure_js__WEBPACK_IMPORTED_MODULE_4__/* .writeExecutorJson */ .sp)(testResultsDir, {
-        reportName: reportId,
+        reportName: reportType,
         reportGenerationId,
         buildOrder: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.runId,
         buildUrl: githubActionRunUrl,
@@ -29662,20 +29650,19 @@ try {
         RunId: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.runId.toString(),
         ReportId: reportGenerationId,
         BranchName: branchName,
-        CommitSha: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.sha,
+        CommitHash: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.sha,
     });
     await (0,_src_allure_js__WEBPACK_IMPORTED_MODULE_4__/* .spawnAllure */ .Mo)(testResultsDir, reportOutputDir);
     const results = await (0,_src_allure_js__WEBPACK_IMPORTED_MODULE_4__/* .updateDataJson */ .V0)(reportOutputDir, reportGenerationId);
-    await (0,_src_cleanup_js__WEBPACK_IMPORTED_MODULE_6__/* .cleanupOutdatedReports */ .g)(reportBaseDir, maxReports);
+    await (0,_src_cleanup_js__WEBPACK_IMPORTED_MODULE_6__/* .cleanupOutdatedReports */ .g)(reportTypeDir, maxReports);
     // outputs
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('report_url', ghPagesReportUrl);
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('report_history_url', ghPagesBaseUrl);
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('test_result', results.testResult);
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('test_result_icon', (0,_src_allure_js__WEBPACK_IMPORTED_MODULE_4__/* .getTestResultIcon */ .RG)(results.testResult));
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('test_result_passed', results.passed);
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('test_result_failed', results.failed);
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('test_result_total', results.total);
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('run_unique_id', reportGenerationId);
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('report_generation_id', reportGenerationId);
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('report_path', reportOutputDir);
 }
 catch (error) {
@@ -29755,10 +29742,10 @@ const getReportGenerationIdInfo = (reportGenerationId) => {
         runTimestamp: parseInt(runTimestampStr),
     };
 };
-const getPrevReportGenerationId = async (reportBaseDir, prevGitHash) => {
+const getPrevReportGenerationId = async (reportTypeDir, prevGitHash) => {
     const matchDirs = {};
-    if (await (0,_helpers_js__WEBPACK_IMPORTED_MODULE_3__/* .isExists */ .hV)(reportBaseDir)) {
-        const dirs = await fs_promises__WEBPACK_IMPORTED_MODULE_1__.readdir(reportBaseDir, { withFileTypes: true });
+    if (await (0,_helpers_js__WEBPACK_IMPORTED_MODULE_3__/* .isExists */ .hV)(reportTypeDir)) {
+        const dirs = await fs_promises__WEBPACK_IMPORTED_MODULE_1__.readdir(reportTypeDir, { withFileTypes: true });
         dirs.filter((dirent) => dirent.isDirectory()).forEach((dir) => {
             if (dir.name.startsWith(prevGitHash)) {
                 const runTimestamp = getReportGenerationIdInfo(dir.name).runTimestamp;
