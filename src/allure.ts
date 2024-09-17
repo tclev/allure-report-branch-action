@@ -96,31 +96,22 @@ export const getPrevReportGenerationId = async (reportTypeDir: string, prevGitHa
 	return null
 }
 
-export const updateDataJson = async (reportDir: string, reportGenerationId: string) => {
+export const writeRecordJson = async (reportDir: string, recordBase: AllureRecordBase) => {
 	const summaryJson: AllureSummaryJson = JSON.parse(
 		(await fs.readFile(path.join(reportDir, 'widgets', 'summary.json'))).toString('utf-8')
 	)
-	const dataFile = path.join(reportDir, 'data.json')
-	let dataJson: AllureRecord[]
-
-	if (await isExists(dataFile)) {
-		dataJson = JSON.parse((await fs.readFile(dataFile)).toString('utf-8'))
-	} else {
-		dataJson = []
-	}
-
+	const filePath = path.join(reportDir, 'record.json')
 	const failedTests = summaryJson.statistic.broken + summaryJson.statistic.failed
 	const testResult: AllureRecordTestResult = failedTests > 0 ? 'FAIL' : summaryJson.statistic.passed > 0 ? 'PASS' : 'UNKNOWN'
 	const record: AllureRecord = {
-		reportGenerationId,
+		...recordBase,
 		testResult,
 		summary: {
 			statistic: summaryJson.statistic,
 			time: summaryJson.time,
 		},
 	}
-	dataJson.unshift(record)
-	await fs.writeFile(dataFile, JSON.stringify(dataJson, null, 2))
+	await fs.writeFile(filePath, JSON.stringify(record, null, 2))
 
 	return {
 		testResult,

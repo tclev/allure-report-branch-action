@@ -47,15 +47,15 @@ const cleanupReport = async (reportDir: Dirent) => {
 		if (dirent.isDirectory()) {
 			const dirPath = path.join(dirent.path, dirent.name)
 			await fs.rm(dirPath, { recursive: true })
-		} else if (dirent.name !== 'data.json') {
+		} else if (dirent.name !== 'record.json') {
 			const filePath = path.join(dirent.path, dirent.name)
 			await fs.rm(filePath)
 		}
 	}
 
-	const dataFilePath = path.join(reportDirPath, 'data.json')
-	if (await isExists(dataFilePath)) {
+	const recordFilePath = path.join(reportDirPath, 'record.json')
+	if (await isExists(recordFilePath)) {
 		const indexFilePath = path.join(reportDirPath, 'index.html')
-		await fs.writeFile(indexFilePath, "<head><meta http-equiv='refresh' content='0; URL=./data.json'></head>\n")
+		await fs.writeFile(indexFilePath, "<head><meta http-equiv='refresh' content='0; URL=./record.json'></head>\n")
 	}
 }

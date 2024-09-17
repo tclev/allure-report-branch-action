@@ -7,7 +7,7 @@ import {
 	getTestResultIcon,
 	isAllureResultsOk,
 	spawnAllure,
-	updateDataJson,
+	writeRecordJson,
 	writeEnvironmentFile,
 	writeExecutorJson,
 } from './src/allure.js'
@@ -84,7 +84,12 @@ try {
 		ReportId: reportGenerationId,
 	})
 	await spawnAllure(testResultsDir, reportOutputDir)
-	const results = await updateDataJson(reportOutputDir, reportGenerationId)
+	const results = await writeRecordJson(reportOutputDir, {
+		repoName: github.context.repo.repo,
+		gitHash: github.context.sha,
+		branchName,
+		reportGenerationId,
+	})
 	await cleanupOutdatedReports(reportTypeDir, maxReports)
 
 	// outputs

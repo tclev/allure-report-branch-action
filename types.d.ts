@@ -18,8 +18,14 @@ interface AllureSummaryTime {
 
 type AllureRecordTestResult = 'PASS' | 'FAIL' | 'UNKNOWN'
 
-interface AllureRecord {
+interface AllureRecordBase {
+	repoName: string
+	gitHash: string
+	branchName: string
 	reportGenerationId: string
+}
+
+interface AllureRecord extends AllureRecordBase {
 	testResult: AllureRecordResult
 	summary: {
 		statistic: AllureSummaryStatistic

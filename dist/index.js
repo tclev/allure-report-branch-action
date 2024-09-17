@@ -29654,7 +29654,12 @@ try {
         ReportId: reportGenerationId,
     });
     await (0,_src_allure_js__WEBPACK_IMPORTED_MODULE_4__/* .spawnAllure */ .Mo)(testResultsDir, reportOutputDir);
-    const results = await (0,_src_allure_js__WEBPACK_IMPORTED_MODULE_4__/* .updateDataJson */ .V0)(reportOutputDir, reportGenerationId);
+    const results = await (0,_src_allure_js__WEBPACK_IMPORTED_MODULE_4__/* .writeRecordJson */ .B4)(reportOutputDir, {
+        repoName: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.repo,
+        gitHash: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.sha,
+        branchName,
+        reportGenerationId,
+    });
     await (0,_src_cleanup_js__WEBPACK_IMPORTED_MODULE_5__/* .cleanupOutdatedReports */ .g)(reportTypeDir, maxReports);
     // outputs
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('report_url', ghPagesReportUrl);
@@ -29680,11 +29685,11 @@ __webpack_async_result__();
 
 /* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
 /* harmony export */   "$g": () => (/* binding */ getPrevReportGenerationId),
+/* harmony export */   "B4": () => (/* binding */ writeRecordJson),
 /* harmony export */   "Iy": () => (/* binding */ getReportGenerationId),
 /* harmony export */   "Mo": () => (/* binding */ spawnAllure),
 /* harmony export */   "RG": () => (/* binding */ getTestResultIcon),
 /* harmony export */   "TO": () => (/* binding */ writeEnvironmentFile),
-/* harmony export */   "V0": () => (/* binding */ updateDataJson),
 /* harmony export */   "aL": () => (/* binding */ isAllureResultsOk),
 /* harmony export */   "sp": () => (/* binding */ writeExecutorJson),
 /* harmony export */   "ux": () => (/* binding */ getReportGenerationIdInfo)
@@ -29761,28 +29766,20 @@ const getPrevReportGenerationId = async (reportTypeDir, prevGitHash) => {
     }
     return null;
 };
-const updateDataJson = async (reportDir, reportGenerationId) => {
+const writeRecordJson = async (reportDir, recordBase) => {
     const summaryJson = JSON.parse((await fs_promises__WEBPACK_IMPORTED_MODULE_1__.readFile(path__WEBPACK_IMPORTED_MODULE_2__.join(reportDir, 'widgets', 'summary.json'))).toString('utf-8'));
-    const dataFile = path__WEBPACK_IMPORTED_MODULE_2__.join(reportDir, 'data.json');
-    let dataJson;
-    if (await (0,_helpers_js__WEBPACK_IMPORTED_MODULE_3__/* .isExists */ .hV)(dataFile)) {
-        dataJson = JSON.parse((await fs_promises__WEBPACK_IMPORTED_MODULE_1__.readFile(dataFile)).toString('utf-8'));
-    }
-    else {
-        dataJson = [];
-    }
+    const filePath = path__WEBPACK_IMPORTED_MODULE_2__.join(reportDir, 'record.json');
     const failedTests = summaryJson.statistic.broken + summaryJson.statistic.failed;
     const testResult = failedTests > 0 ? 'FAIL' : summaryJson.statistic.passed > 0 ? 'PASS' : 'UNKNOWN';
     const record = {
-        reportGenerationId,
+        ...recordBase,
         testResult,
         summary: {
             statistic: summaryJson.statistic,
             time: summaryJson.time,
         },
     };
-    dataJson.unshift(record);
-    await fs_promises__WEBPACK_IMPORTED_MODULE_1__.writeFile(dataFile, JSON.stringify(dataJson, null, 2));
+    await fs_promises__WEBPACK_IMPORTED_MODULE_1__.writeFile(filePath, JSON.stringify(record, null, 2));
     return {
         testResult,
         passed: summaryJson.statistic.passed,
@@ -29880,15 +29877,15 @@ const cleanupReport = async (reportDir) => {
             const dirPath = path__WEBPACK_IMPORTED_MODULE_2__.join(dirent.path, dirent.name);
             await fs_promises__WEBPACK_IMPORTED_MODULE_1__.rm(dirPath, { recursive: true });
         }
-        else if (dirent.name !== 'data.json') {
+        else if (dirent.name !== 'record.json') {
             const filePath = path__WEBPACK_IMPORTED_MODULE_2__.join(dirent.path, dirent.name);
             await fs_promises__WEBPACK_IMPORTED_MODULE_1__.rm(filePath);
         }
     }
-    const dataFilePath = path__WEBPACK_IMPORTED_MODULE_2__.join(reportDirPath, 'data.json');
-    if (await (0,_helpers_js__WEBPACK_IMPORTED_MODULE_4__/* .isExists */ .hV)(dataFilePath)) {
+    const recordFilePath = path__WEBPACK_IMPORTED_MODULE_2__.join(reportDirPath, 'record.json');
+    if (await (0,_helpers_js__WEBPACK_IMPORTED_MODULE_4__/* .isExists */ .hV)(recordFilePath)) {
         const indexFilePath = path__WEBPACK_IMPORTED_MODULE_2__.join(reportDirPath, 'index.html');
-        await fs_promises__WEBPACK_IMPORTED_MODULE_1__.writeFile(indexFilePath, "<head><meta http-equiv='refresh' content='0; URL=./data.json'></head>\n");
+        await fs_promises__WEBPACK_IMPORTED_MODULE_1__.writeFile(indexFilePath, "<head><meta http-equiv='refresh' content='0; URL=./record.json'></head>\n");
     }
 };
 
