@@ -29900,7 +29900,7 @@ const cleanupReport = async (reportDir) => {
     const dataFilePath = path__WEBPACK_IMPORTED_MODULE_2__.join(reportDirPath, 'data.json');
     if (await (0,_helpers_js__WEBPACK_IMPORTED_MODULE_4__/* .isExists */ .hV)(dataFilePath)) {
         const indexFilePath = path__WEBPACK_IMPORTED_MODULE_2__.join(reportDirPath, 'index.html');
-        await (0,fs__WEBPACK_IMPORTED_MODULE_0__.writeFileSync)(indexFilePath, "<head><meta http-equiv='refresh' content='0; URL=./data.json'></head>\n");
+        await fs_promises__WEBPACK_IMPORTED_MODULE_1__.writeFile(indexFilePath, "<head><meta http-equiv='refresh' content='0; URL=./data.json'></head>\n");
     }
 };
 

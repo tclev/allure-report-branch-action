@@ -1,4 +1,4 @@
-import { Dirent, readdirSync, writeFileSync } from 'fs'
+import { Dirent, readdirSync } from 'fs'
 import * as fs from 'fs/promises'
 import * as path from 'path'
 import { getReportGenerationId, getReportGenerationIdInfo } from './allure.js'
@@ -56,6 +56,6 @@ const cleanupReport = async (reportDir: Dirent) => {
     const dataFilePath = path.join(reportDirPath, 'data.json')
     if (await isExists(dataFilePath)) {
         const indexFilePath = path.join(reportDirPath, 'index.html')
-        await writeFileSync(indexFilePath, "<head><meta http-equiv='refresh' content='0; URL=./data.json'></head>\n")
+        await fs.writeFile(indexFilePath, "<head><meta http-equiv='refresh' content='0; URL=./data.json'></head>\n")
     }
 }
