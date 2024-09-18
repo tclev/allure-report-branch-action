@@ -29592,7 +29592,6 @@ __nccwpck_require__.a(module, async (__webpack_handle_async_dependencies__, __we
 
 
 
-const baseDir = 'test-reports';
 try {
     const runTimestamp = Date.now();
     // vars
@@ -29600,9 +29599,11 @@ try {
     const testResultsDir = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('results_dir');
     const ghPagesPath = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('gh_pages');
     const reportType = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('report_type');
-    const maxReports = parseInt(_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('max_reports'), 10);
+    const maxReports = parseInt(_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('max_reports'));
+    const cleanupEnabled = maxReports > 0;
     const branchName = (0,_src_helpers_js__WEBPACK_IMPORTED_MODULE_6__/* .getBranchName */ .Lm)(_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.ref, _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.payload.pull_request);
     const reportGenerationId = `${_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.sha}_${_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.runId}_${runTimestamp}`;
+    const baseDir = _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.repo;
     const reportTypeDir = path__WEBPACK_IMPORTED_MODULE_3__.join(ghPagesPath, baseDir, reportType);
     const reportOutputDir = path__WEBPACK_IMPORTED_MODULE_3__.join(reportTypeDir, reportGenerationId);
     // urls
@@ -29660,7 +29661,9 @@ try {
         branchName,
         reportGenerationId,
     });
-    await (0,_src_cleanup_js__WEBPACK_IMPORTED_MODULE_5__/* .cleanupOutdatedReports */ .g)(reportTypeDir, maxReports);
+    if (cleanupEnabled) {
+        await (0,_src_cleanup_js__WEBPACK_IMPORTED_MODULE_5__/* .cleanupOutdatedReports */ .g)(reportTypeDir, maxReports);
+    }
     // outputs
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('report_url', ghPagesReportUrl);
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('test_result', results.testResult);

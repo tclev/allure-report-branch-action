@@ -14,8 +14,6 @@ import {
 import { cleanupOutdatedReports } from './src/cleanup.js'
 import { getBranchName, isExists } from './src/helpers.js'
 
-const baseDir = 'test-reports'
-
 try {
 	const runTimestamp = Date.now()
 
@@ -24,9 +22,11 @@ try {
 	const testResultsDir = core.getInput('results_dir')
 	const ghPagesPath = core.getInput('gh_pages')
 	const reportType = core.getInput('report_type')
-	const maxReports = parseInt(core.getInput('max_reports'), 10)
+	const maxReports = parseInt(core.getInput('max_reports'))
+	const cleanupEnabled = maxReports > 0
 	const branchName = getBranchName(github.context.ref, github.context.payload.pull_request)
 	const reportGenerationId = `${github.context.sha}_${github.context.runId}_${runTimestamp}`
+	const baseDir = github.context.repo.repo
 	const reportTypeDir = path.join(ghPagesPath, baseDir, reportType)
 	const reportOutputDir = path.join(reportTypeDir, reportGenerationId)
 
@@ -90,7 +90,9 @@ try {
 		branchName,
 		reportGenerationId,
 	})
-	await cleanupOutdatedReports(reportTypeDir, maxReports)
+	if (cleanupEnabled) {
+		await cleanupOutdatedReports(reportTypeDir, maxReports)
+	}
 
 	// outputs
 	core.setOutput('report_url', ghPagesReportUrl)
