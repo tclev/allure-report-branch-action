@@ -17,10 +17,14 @@ inputs:
     description: 'Output allure report dir, default "allure-report"'
     required: true
     default: 'allure-report'
-  gh_pages:
-    description: 'Folder with gh-pages branch'
+  gh_pages_path:
+    description: 'Folder path where the GitHub Pages files are checked out'
     required: true
     default: 'gh-pages'
+  gh_pages_url:
+    description: 'Base GitHub Pages URL where reports will be published'
+    required: false
+    default: 'https://potential-adventure-ozr3k39.pages.github.io'
   max_reports:
     description: 'Max active reports to keep per test type. Set to 0 to disable cleanup.'
     required: false

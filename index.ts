@@ -20,9 +20,10 @@ try {
 	// vars
 	const prevGitHash = core.getInput('prev_git_hash')
 	const testResultsDir = core.getInput('results_dir')
-	const ghPagesPath = core.getInput('gh_pages')
+	const ghPagesPath = core.getInput('gh_pages_path')
+	const ghPagesUrl = core.getInput('gh_pages_url')
 	const reportType = core.getInput('report_type')
-	const maxReports = parseInt(core.getInput('max_reports'))
+	const maxReports = parseInt(core.getInput('max_reports').trim() || '0')
 	const cleanupEnabled = maxReports > 0
 	const branchName = getBranchName(github.context.ref, github.context.payload.pull_request)
 	const reportGenerationId = `${github.context.sha}_${github.context.runId}_${runTimestamp}`
@@ -32,7 +33,6 @@ try {
 
 	// urls
 	const githubActionRunUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}/actions/runs/${github.context.runId}`
-	const ghPagesUrl = `https://${github.context.repo.owner}.github.io/${github.context.repo.repo}`
 	const ghPagesBaseUrl = `${ghPagesUrl}/${baseDir}/${reportType}`.replaceAll(' ', '%20')
 	const ghPagesReportUrl = `${ghPagesBaseUrl}/${reportGenerationId}`.replaceAll(' ', '%20')
 	const prevReportGenerationId = await getPrevReportGenerationId(reportTypeDir, prevGitHash)
@@ -55,7 +55,7 @@ try {
 	})
 
 	if (!(await isExists(ghPagesPath))) {
-		throw new Error("Folder with gh-pages branch doesn't exist: " + ghPagesPath)
+		throw new Error("Folder with GitHub Pages files doesn't exist: " + ghPagesPath)
 	}
 
 	if (!(await isAllureResultsOk(testResultsDir))) {
