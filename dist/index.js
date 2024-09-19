@@ -29597,9 +29597,10 @@ try {
     // vars
     const prevGitHash = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('prev_git_hash');
     const testResultsDir = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('results_dir');
-    const ghPagesPath = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('gh_pages');
+    const ghPagesPath = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('gh_pages_path');
+    const ghPagesUrl = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('gh_pages_url');
     const reportType = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('report_type');
-    const maxReports = parseInt(_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('max_reports'));
+    const maxReports = parseInt(_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('max_reports').trim() || '0');
     const cleanupEnabled = maxReports > 0;
     const branchName = (0,_src_helpers_js__WEBPACK_IMPORTED_MODULE_6__/* .getBranchName */ .Lm)(_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.ref, _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.payload.pull_request);
     const reportGenerationId = `${_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.sha}_${_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.runId}_${runTimestamp}`;
@@ -29608,7 +29609,6 @@ try {
     const reportOutputDir = path__WEBPACK_IMPORTED_MODULE_3__.join(reportTypeDir, reportGenerationId);
     // urls
     const githubActionRunUrl = `https://github.com/${_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.owner}/${_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.repo}/actions/runs/${_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.runId}`;
-    const ghPagesUrl = `https://${_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.owner}.github.io/${_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.repo}`;
     const ghPagesBaseUrl = `${ghPagesUrl}/${baseDir}/${reportType}`.replaceAll(' ', '%20');
     const ghPagesReportUrl = `${ghPagesBaseUrl}/${reportGenerationId}`.replaceAll(' ', '%20');
     const prevReportGenerationId = await (0,_src_allure_js__WEBPACK_IMPORTED_MODULE_4__/* .getPrevReportGenerationId */ .$g)(reportTypeDir, prevGitHash);
@@ -29629,7 +29629,7 @@ try {
         maxReports,
     });
     if (!(await (0,_src_helpers_js__WEBPACK_IMPORTED_MODULE_6__/* .isExists */ .hV)(ghPagesPath))) {
-        throw new Error("Folder with gh-pages branch doesn't exist: " + ghPagesPath);
+        throw new Error("Folder with GitHub Pages files doesn't exist: " + ghPagesPath);
     }
     if (!(await (0,_src_allure_js__WEBPACK_IMPORTED_MODULE_4__/* .isAllureResultsOk */ .aL)(testResultsDir))) {
         throw new Error('There were issues with the allure-results, see error above.');
